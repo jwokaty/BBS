@@ -1,0 +1,61 @@
+      <header>
+
+        {% include navigation.html %}
+
+        <h1>
+          {{ page_title }}
+        </h1>
+
+        {% if motd %}
+        <div id="motd">
+          {{ motd }}
+        </div>
+        {% endif %}
+
+        {% if custom_note %}
+        <div id="custom_note">
+          {{ custom_note }}
+        </div>
+        {% endif %}
+
+        {% if bioc-longtest %}
+        <div>
+          <a href="https://contributions.bioconductor.org/long-tests.html">Subscribe to Long Tests Builds</a>
+        </div>
+        {% endif %}
+
+        <div id="report_timestamp">
+          Generated {{ report_date }}
+        </div>
+
+        {% if snapshot_date %}
+        <div id="snapshot_timestamp">
+          Snapshot Taken Approximately {{ snapshot_date }}
+        </div>
+        {% endif %}
+
+        {% if nodes %}
+        <div id="nodes">
+          {% include nodes.html %}
+        </div>
+        {% endif %}
+
+        {% if statuses %}
+        <div id="statuses">
+          {% include statuses.html %}
+        </div>
+        {% endif %}
+
+        {% if quickstats %}
+        <div id="quickstats">
+          {% include quickstats.html %}
+        </div>
+        {% endif %}
+
+        {% if developer_note %}
+        <div id="developer_note">
+          {{ developer_note }}
+        </div>
+        {% endif %}
+
+      </header>

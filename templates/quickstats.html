@@ -1,0 +1,62 @@
+{# quickstats.html #}
+
+      <article id="quickstats">
+
+        <h2>Quick Stats</h2>
+
+        <div class="row">
+          <div class="col">
+            Node
+          </div>
+          <div class="col">
+            OS / Arch
+          </div>
+          {% if has_install %}
+          <div class="col">
+            Install
+          </div>
+          {% endif %}
+          {% if has_build %}
+          <div class="col">
+            Build
+          </div>
+          {% endif %}
+          {% if has_check %}
+          <div class="col">
+            Check
+          </div>
+          {% endif %}
+          {% if has_build_bin %}
+          <div class="col">
+            Build Bin
+          </div>
+          {% endif %}
+        </div>
+        {% for node in nodes.items() %}
+        <div class="row">
+          <div class="col">
+            {{ node['name'] }}
+          </div>
+          <div class="col">
+            {{ node['os'] }}
+          </div>
+          <div class="col">
+            {% for timeout, error, warning, ok in node[2:4] %}
+            <div>
+              {{ timeout }}
+            </div>
+            <div>
+              {{ error }}
+            </div>
+            <div>
+              {{ warning }}
+            </div>
+            <div>
+              {{ ok }}
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </article>

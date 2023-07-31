@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+      {% set packages = package %}
+
+      {% include "package.html" %}
+
+      {% if dependent_packages %}
+
+        <title>
+          Results for Bioconductor software packages depending directly on {{ package }}
+        </title>
+
+        {% set packages = dependent_packages %}
+
+        {% include "quickstats.html" %}
+
+        {% include "package.html" %}
+
+      {% endif %}
+
+{% endblock content %}

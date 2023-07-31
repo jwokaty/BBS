@@ -1,0 +1,91 @@
+{# package_node.html #}
+
+        <div class="row">
+          <div class="col header">
+            Package
+          </div>
+          <div class="col header">
+            Maintainer
+          </div>
+          {% if "install" in stages %}
+          <div class="col header">
+            Install 
+          </div>
+          {% endif %}
+          {% if "build" in stages %}
+          <div class="col header">
+            Build 
+          </div>
+          {% endif %}
+          {% if "check" in stages %}
+          <div class="col header">
+            Check 
+          </div>
+          {% endif %}
+          {% if "buildbin" in stages %}
+          <div class="col header">
+            Build Bin 
+          </div>
+          {% endif %}
+          {% if propagate %}
+          <div class="col header">
+            Propagation
+          </div>
+          {% endif %}
+        </div>
+        {% for package in packages %}
+        {% set result = results[package] %}
+        <div class="row">
+          <div class="col">
+            <a href="{{ package }}">
+              {{ package }}
+            </a>
+            {{ package["version"] }}
+            <a href="https://bioconductor.org/packages/{{ version }}/{{ package }}">
+              landing page
+            </a>
+          </div>
+          <div class="col">
+            {{ package["maintainer"] }}
+          </div>
+          {% if package in skipped_packages or package in unsupported_packages %}
+            <div class="col">
+              {{ result[node.node_id]["error"] }}
+            </div>
+          {% else %}
+            {% if "install" in stages %}
+            <div class="col">
+              <a href="{{ package }}/{{ node.node_id }}-install.html">
+                {{ result[node.node_id]["install"] }}
+              </a>
+            </div>
+            {% endif %}
+            {% if "build" in stages %}
+            <div class="col">
+              <a href="{{ package }}/{{ node.node_id }}-build.html">
+                {{ result[node.node_id]["build"] }}
+              </a>
+            </div>
+            {% endif %}
+            {% if "checksrc" in stages %}
+            <div class="col">
+              <a href="{{ package }}/{{ node.node_id }}-checksrc.html">
+                {{ result[node.node_id]["checksrc"] }}
+              </a>
+            </div>
+            {% endif %}
+            {% if "buildbin" in stages %}
+            <div class="col">
+              <a href="{{ package }}/{{ node.node_id }}-buildbin.html">
+                {{ result[node.node_id]["buildbin"] }}
+              </a>
+            </div>
+            {% endif %}
+            {% if propagate %}
+            <div class="col">
+                {{ propagate[package] }}
+            </div>
+            {% endif %}
+          {% endif %}
+        </div>
+        {% endfor %}

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+      {% include "summary.html" %}
+
+      {% for command in commands %}
+      <article class="output">
+        <h2>
+         {{ command['name'] }} 
+        </h2>
+        {% if command['compiler'] %}
+        <div class="row">
+          <div class="col">
+           R variable (VAR) 
+          </div>
+          <div class="col">
+           Value ('R CMD config <VAR>' output) 
+          </div>
+        </div>
+          {% for r_variable in command['r_variables'] %}
+          <div class="row">
+            <div class="col">
+              {{ r_variable }} 
+            </div>
+            <div class="col">
+              {{ r_variable['r_variable_value'] }} 
+            </div>
+          </div>
+          {% endfor %}
+          <div class="row">
+            {{ command['sys_cmd_ver'] }}
+          </div>
+        {% endif %}
+      </article>
+      {% endfor %}
+
+{% endblock content %}

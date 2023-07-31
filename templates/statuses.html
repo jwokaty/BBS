@@ -1,0 +1,96 @@
+{# statuses.html #}
+
+        <div class="row">
+          <div class="col-sm">
+            <div class="row">
+              Package status is indicated by one of the following
+            </div>
+            <div class="row row-cols-2">
+              <div class="col">
+                Timeout 
+              </div>
+              <div class="col">
+               {{ timeout.explanation }} 
+              </div>
+            </div>
+            <div class="row row-cols-2">
+              <div class="col">
+                Error 
+              </div>
+              <div class="col">
+               {{ error.explanation }} 
+              </div>
+            </div>
+            <div class="row row-cols-2">
+              <div class="col">
+                Warning 
+              </div>
+              <div class="col">
+               {{ warning.explanation }} 
+              </div>
+            </div>
+            <div class="row row-cols-2">
+              <div class="col">
+                OK 
+              </div>
+              <div class="col">
+               {{ ok.explanation }} 
+              </div>
+            </div>
+            <div class="row row-cols-2">
+              <div class="col">
+                NA 
+              </div>
+              <div class="col">
+               {{ na.explanation }} 
+              </div>
+            </div>
+            <div class="row row-cols-2">
+              <div class="col">
+                Skipped
+              </div>
+              <div class="col">
+               {{ skipped.explanation }} 
+              </div>
+            </div>
+            <div class="row">
+              Package status is indicated by one of the following
+            </div>
+          </div>
+
+          <div class="col-sm">
+            <div class="row">
+              Package propagation is indicated by one of the following:
+            </div>
+            <div class="row row-cols-2">
+              <div class="col">
+                <a class="btn">Yes</a>
+              </div>
+              <div class="col">
+                Package was propagated because it didn't previously exist or
+                version was bumped. 
+              </div>
+            </div>
+            <div class="row row-cols-2">
+              <div class="col">
+                No 
+              </div>
+              <div class="col">
+                Package was not propagated because of a problem (impossible
+                dependencies or version lower than what is already propagated).
+              </div>
+            </div>
+            <div class="row row-cols-2">
+              <div class="col">
+                Unneeded 
+              </div>
+              <div class="col">
+                Package was not propagated because it is already in the repository
+                with this version. A version bump is required to propagate it.
+              </div>
+            </div>
+            <div class="row">
+              A <s>crossed out</s> package indicates the package is deprecated.
+            </div>
+          </div>
+        </div>

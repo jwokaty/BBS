@@ -1,0 +1,13 @@
+{# summary.html #}
+
+      <article class="output">
+      {% for label, value in detail.items() %}
+        <div class="row">
+          <div class="col">
+           {{ label }} 
+          </div>
+          <div class="col">
+           {{ value }} 
+          </div>
+      {% endfor %}
+      </article>

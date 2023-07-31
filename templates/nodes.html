@@ -1,0 +1,54 @@
+{# nodes.html #}
+
+        <div class="row">
+          <div class="col-sm">
+            <div class="row row-cols-5">
+              <div class="col col-sm-1">
+                Hostname
+              </div>
+              <div class="col col-sm-2">
+                OS 
+              </div>
+              <div class="col col-sm-1">
+                Arch (*) 
+              </div>
+              <div class="col col-sm-3">
+                R version 
+              </div>
+              <div class="col col-sm-2">
+                Installed packages
+              </div>
+            </div>
+            <div class="row row-cols-5">
+            {% for node in nodes %}
+              <div class="col col-sm-1">
+                <a href="{{ node.url }}">{{ node.name }}</a>
+              </div>
+              <div class="col col-sm-2">
+                {{ node.os }}
+              </div>
+              <div class="col col-sm-1">
+                {{ node.arch }}
+              </div>
+              <div class="col col-sm-3">
+                {{ node.r_version }}
+              </div>
+              <div class="col col-sm-2">
+                <a href="{{ node.r_installed_packages_url }}">
+                  {{ node.r_installed_packages_count }}
+                </a>
+              </div>
+            {% endfor %}
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <p>
+            Click on any hostname to see more info about the system (e.g.,
+            compilers)
+          </p>
+          <p>
+            * as reported by <span class="code">uname -p</span>, except on
+            Windows and Mac OS X
+          </p>
+        </div>

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+      {% include "package_full.html" %}
+
+      {% include "summary.html" %}
+
+      <article class="output">
+        <h2>
+          Command output
+        </h2>
+        <div>
+          {{ command_output }}
+        </div>
+      </article>
+
+      {% if status == "check" %}
+
+      <article class="output">
+        <h2>
+          Installation output
+        </h2>
+        <div class="output_path">
+          {{ install_output_path }}
+        </div>
+        <div>
+          {{ install_output }}
+        </div>
+      </article>
+
+      <article class="output">
+        <h2>
+          Tests output
+        </h2>
+        <div class="output_path">
+          {{ tests_output_path }}
+        </div>
+        <div>
+          {{ tests_output }}
+        </div>
+      </article>
+
+      <article class="output">
+        <h2>
+          Example timings
+        </h2>
+        <div class="output_path">
+          {{ example_timings_path }}
+        </div>
+        <div class="output">
+          {{ example_timings_output }}
+        </div>
+      </article>
+      {% endif %}
+
+{% endblock content %}

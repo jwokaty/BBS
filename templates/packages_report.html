@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block content %}
+      {% if compact %}
+        {% include "package_compact.html" %}
+      {% if node %}
+        {% include "package_node.html" %}
+      {% else %}
+        {% include "package_full.html" %}
+      {% endif %}
+{% endblock content %}
