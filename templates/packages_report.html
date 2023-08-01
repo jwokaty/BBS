@@ -2,10 +2,10 @@
 
 {% block content %}
       {% if compact %}
-        {% include "package_compact.html" %}
+        {% include "compact_packages.html" %}
       {% elif node %}
-        {% include "package_node.html" %}
+        {% include "node_packages.html" %}
       {% else %}
-        {% include "package_full.html" %}
+        {% include "packages.html" %}
       {% endif %}
 {% endblock content %}

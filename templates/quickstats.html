@@ -4,6 +4,7 @@
 
         <h2>Quick Stats</h2>
 
+	{% for node, stats in quickstats.items() %}
         <div class="row">
           <div class="col">
             Node
@@ -11,28 +12,27 @@
           <div class="col">
             OS / Arch
           </div>
-          {% if has_install %}
+          {% if "INSTALL" in stages %}
           <div class="col">
             Install
           </div>
           {% endif %}
-          {% if has_build %}
+          {% if "BUILD" in stages %}
           <div class="col">
             Build
           </div>
           {% endif %}
-          {% if has_check %}
+          {% if "CHECKSRC" in stages %}
           <div class="col">
             Check
           </div>
           {% endif %}
-          {% if has_build_bin %}
+          {% if "BUILDBIN" in stages %}
           <div class="col">
             Build Bin
           </div>
           {% endif %}
         </div>
-        {% for node in nodes %}
         <div class="row">
           <div class="col">
             {{ node.name }}
@@ -41,20 +41,22 @@
             {{ node.os }}
           </div>
           <div class="col">
-            {% for timeout, error, warning, ok in node[2:4] %}
+           {% for stage, (timeout, error, warnings, ok, notneeded) in stats.items() %}
             <div>
               {{ timeout }}
             </div>
             <div>
               {{ error }}
             </div>
+	    {% if stage == "checksrc" %}
             <div>
               {{ warning }}
             </div>
+	    {% endif %}
             <div>
               {{ ok }}
             </div>
-            {% endfor %}
+          {% endfor %}
           </div>
         </div>
         {% endfor %}

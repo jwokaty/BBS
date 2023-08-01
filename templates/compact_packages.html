@@ -1,0 +1,110 @@
+{# packages.html #}
+
+        {% for package in packages %} 
+        <div class="row row-cols-2">
+          <div class="col">
+            <div class="row">
+              <a href="{{ package.name }}">{{ package.name }}</a>
+              {{ package.version }}
+              (<a href="https://bioconductor.org/packages/devel/{{ package.name }}">
+                 landing page
+               </a>)
+            </div>
+            <div class="row">
+              Maintainer: {{ package.maintainer }}
+            </div>
+            <div class="row snapshot_date">
+              Snapshot Date: {{ package.snapshot_date }}
+            </div>
+            <div class="row git_url">
+              Git URL: {{ package.git_url }}
+            </div>
+            <div class="row git_branch">
+              Git Branch: {{ package.git_branch }}
+            </div>
+            <div class="row git_last_commit">
+              Git Last Commit: {{ package.git_last_commit }}
+            </div>
+            <div class="row git_last_commit_date">
+              Git Last Commit Date: {{ package.git_last_commit_date }}
+            </div>
+          </div>
+          <div class="col">
+            <div class="row row-cols-6">
+              <div class="col header">
+                OS / Arch
+              </div>
+              {% for %}
+              {% if "install" in stages %}
+              <div class="col header">
+                Install
+              </div>
+              {% endif %}
+              {% if "build" in stages %}
+              <div class="col header">
+                Build
+              </div>
+              {% endif %}
+              {% if "check" in stages %}
+              <div class="col header">
+                Check
+              </div>
+              {% endif %}
+              {% if "buildbin" in stages %}
+              <div class="col header">
+                Build Bin
+              </div>
+              {% endif %}
+              {% if "propagate" in stages %}
+              <div class="col header">
+                Propagate
+              </div>
+              {% endif %}
+            </div>
+            {% for result in node.node_id[package] %}
+            <div class="row row-cols-7">
+              <div class="col {{ result['os_arch'] }}">
+                {{ result['os_arch'] }}
+              </div>
+              {% if "install" in stages %}
+              <div class="col {{ result['os_arch'] }}">
+                <a class="btn btn-{{ result['install'] }}"
+                   href="{{ package.name }}/{{ node.node_id }}-install.html">
+                  {{ result['install'] }}
+                </a>
+              </div>
+              {% endif %}
+              {% if "build" in stages  %}
+              <div class="col {{ result['os_arch'] }}">
+                <a class="btn btn-{{ result['build'] }}"
+                   href="{{ package.name }}/{{ node.node_id }}-buildsrc.html">
+                  {{ result['build'] }}
+                </a>
+              </div>
+              {% endif %}
+              {% if "check" in stages %}
+              <div class="col {{ result['os_arch'] }}">
+                <a class="btn btn-{{ result['check'] }}"
+                   href="{{ package.name }}/{{ node.node_id }}-checksrc.html">
+                  {{ result['check'] }}
+                </a>
+              </div>
+              {% endif %}
+              {% if "buildbin" in stages %}
+              <div class="col {{ result['os_arch'] }}">
+                <a class="btn btn-{{ result['buildbin'] }}"
+                   href="{{ package.name }}/{{ node.node_id }}-buildbin.html">
+                  {{ result['buildbin'] }}
+                </a>
+              </div>
+              {% endif %}
+              {% if propagate %}
+              <div class="col {{ result['os_arch'] }}">
+                  {{ propagate[package] }}
+              </div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
