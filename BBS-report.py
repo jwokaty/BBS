@@ -15,8 +15,8 @@ import re
 import fnmatch
 import string
 import html
-from jinja3 import Environment, FileSystemLoader
-from typing import Dict
+from jinja2 import Environment, FileSystemLoader
+from typing import Dict, Tuple
 
 import bbs.fileutils
 import bbs.parse
@@ -26,20 +26,10 @@ import BBSutils
 import BBSvars
 import BBSreportutils
 
-
-ENV = Environment(loader=FileSystemLoader("templates/"))
-NODES = BBSreportutils.set_NODES(BBSutils.getenv('BBS_REPORT_NODES'))
+BBS_HOME = BBSvars.BBS_home
+ENV = Environment(loader=FileSystemLoader(os.path.join(BBS_HOME, "templates")))
 MEAT_INDEX = bbs.parse.get_meat_packages(BBSutils.meat_index_file,
                                          as_dict=True)
-
-def get_stages() -> list:
-    """Get stage labels for build"""
-
-    stage_labels = []
-    buildtype = BBSvars.buildtype
-    for stage in BBSreportutils.stages_to_display(buildtype):
-        stage_labels.append(BBSreportutils.stage_label(stage))
-    return stage_labels
 
 class BBSReportConfiguration:
 
@@ -74,18 +64,30 @@ class BBSPackageReference:
 
         self.results = {}
         build_type = BBSvars.buildtype
-        for node in NODES:
-            if pkg not in BBSreportutils.supported_pkgs(node):
+        for node in BBSreportutils.NODES:
+            if self.name not in BBSreportutils.supported_pkgs(node):
                 continue
 
-            self.results[node] = {}
-            for stage in get_stages():
+            self.results[node.node_id] = {}
+            for stage in BBSreportutils.stages_to_display(build_type):
+                stage = stage.lower()
                 if (build_type != "bioc-longtests" and stage == "install") or \
                     (build_type not in ["workflows", "books"] and stage == "checksrc") or \
                     (BBSreportutils.is_doing_buildbin(node) and stage == "buildbin") or \
                     stage == "buildsrc":
-                    self.results[node][stage] = \
-                        BBSreportutils.get_pkg_results(pkg, node.node_id, stage)
+                    self.results[node.node_id][stage] = \
+                        BBSreportutils.get_pkg_status(name, node.node_id, stage)
+                    print(f"self.results[{node.node_id}][{stage}] = "
+                          f"{self.results[node.node_id][stage]}")
+
+        print(f"{self.name} = name\n"
+              f"{self.maintainer} = maintainer\n"
+              f"{self.version} = version\n"
+              f"{self.package_status} = package_status\n"
+              f"{self.git_url} = git_url\n"
+              f"{self.git_branch} = git_branch\n"
+              f"{self.git_last_commit} = git_last_commit\n"
+              f"{self.git_last_commit_date} = git_last_commit_date\n")
         print("OK")
 
 #    def set_info(self, maintainer: str, version: str, package_status: str,
@@ -99,19 +101,23 @@ class BBSPackageReference:
 #        self.git_last_commit = git_last_commit
 #        self.git_last_commit_date = git_last_commit_date
 
-class BBSContent:
+class BBSReportContent:
 
     def __init__(self) -> None:
 
-        self.motd = os.environ['BBS_REPORT_MOTD'] or ""
-        self.skipped_pkgs = bbs.parse.get_meat_packages(BBSutils.skipped_index_file)
-        self.pkgs = list(meat_index.keys()) + skipped_pkgs
+        self.motd = os.environ.get("BBS_REPORT_MOTD", "")
+        self.skipped_pkgs = \
+                bbs.parse.get_meat_packages(BBSutils.skipped_index_file)
+        self.pkgs = list(MEAT_INDEX.keys()) + self.skipped_pkgs
         self.pkgs.sort(key=str.lower)
         self.version = BBSvars.bioc_version
+        self.stages = BBSreportutils.stages_to_display(BBSvars.buildtype)
+
+        BBSreportutils.set_NODES(BBSutils.getenv('BBS_REPORT_NODES'))
 
         # Load package dep graph
         if BBSvars.buildtype in ["bioc", "bioc-mac-arm64"]:
-            node0 = NODES[0]
+            node0 = BBSreportutils.NODES[0]
             Node0_rdir = BBSvars.products_in_rdir.subdir(node0.node_id)
             print(f"BBS> [stage6d] Get {BBSutils.pkg_dep_graph_file} from "
                   f"{Node0_rdir.label}/")
@@ -122,25 +128,27 @@ class BBSContent:
                 bbs.parse.load_pkg_dep_graph(BBSutils.pkg_dep_graph_file)
             print("OK")
             self.pkgs_inner_rev_deps = \
-                BBSreportutils.get_reverse_deps(self.pkgs, self.pkg_dep_graph)
+                BBSreportutils.get_inner_reverse_deps(self.pkgs, self.pkg_dep_graph)
             sys.stdout.flush()
         else:
             self.pkgs_inner_rev_deps = None
 
-        if BBSvars.buildtype in ["bioc", "bioc-mac-arm64"] and \
-            len(self.pkg_rev_deps):
-            self.quickstats = \
-                BBSreportutils.compute_quickstats(self.pkg_rev_deps)
+        self.quickstats = BBSreportutils.import_BUILD_STATUS_DB(self.pkgs)
+        print(self.quickstats)
+#        if BBSvars.buildtype in ["bioc", "bioc-mac-arm64"] and \
+#            len(self.pkgs_inner_rev_deps):
+#            self.quickstats = \
+#                BBSreportutils.compute_quickstats(self.pkgs_inner_rev_deps)
 
         print(f"BBS> [stage6d] Getting info for all packages ...")
         sys.stdout.flush()
 
-        for i in range(self.pkgs):
-            for node in NODES:
-                if self.pkg[i] not in BBSreportutils.supported_pkgs(node):
+        for i in range(len(self.pkgs)):
+            for node in BBSreportutils.NODES:
+                if self.pkgs[i] not in BBSreportutils.supported_pkgs(node):
                     continue
 
-                dcf_record = MEAT_INDEX[self.pkgs[i]]]
+                dcf_record = MEAT_INDEX[self.pkgs[i]]
                 self.pkgs[i] = \
                     BBSPackageReference(self.pkgs[i],
                                         dcf_record['Maintainer'],
@@ -175,12 +183,12 @@ def get_notes_to_developer(pkg: str, extra_note: str) -> str:
     notes = "To {pkg}'s developers/maintainers:"
     if BBSvars.buildtype == "bioc":
         url = "https://bioconductor.org/developers/how-to/troubleshoot-build-report/"
-        notes += ((f"Allow up to 24 hours (and sometimes 48 hours) for "
-                   f"your latest push to"
-                   f"git@git.bioconductor.org:packages/{pkg}.git "
-                   f"to reflect on this report. "
-                   f"See <a href=\"{url}\">Troubleshooting Build Report</a> "
-                   f"for more information.")
+        notes += (f"Allow up to 24 hours (and sometimes 48 hours) for "
+                  f"your latest push to"
+                  f"git@git.bioconductor.org:packages/{pkg}.git "
+                  f"to reflect on this report. "
+                  f"See <a href=\"{url}\">Troubleshooting Build Report</a> "
+                  f"for more information.")
     if os.path.exists("Renviron.bioc"):
         notes += (f"Use the following "
                   f"<a href=\"../{Renviron.bioc}\">Renviron settings</a>"
@@ -188,7 +196,7 @@ def get_notes_to_developer(pkg: str, extra_note: str) -> str:
                   f"check\" recently failed on the Linux builder over a "
                   f"missing dependency, add the missing dependency to "
                   f"\"Suggests\" in your DESCRIPTION file. See the "
-                  f"<a href="../{Renviron.bioc}\">Renviron.bioc</a> "
+                  f"<a href=\"../{Renviron.bioc}\">Renviron.bioc</a> "
                   f"for details.")
     if extra_note != None:
         notes += extra_note
@@ -249,12 +257,12 @@ def get_SysCommandVersion_from_file(Node_rdir: str,
     system_command_version = ""
     with Node_rdir.WOpen(filename, return_None_on_error=True) as f:
         if f == None:
-            break
+            return 
         for line in f:
             system_command_version += bbs.parse.bytes2str(line)
     return system_command_version
 
-def make_aboutnode_page(Node_rdir: str, node: Node) -> str:
+def make_about_node_page(Node_rdir: str, node: BBSreportutils.Node) -> str:
     """Create an about Node page
 
     Args:
@@ -298,7 +306,7 @@ def make_aboutnode_page(Node_rdir: str, node: Node) -> str:
             system_command["r_variable_values"][r_variable] = \
                 get_Rconfig_value_from_file(Node_rdir, r_variable)
 
-    template = env.get_template("node_about.html")
+    template = ENV.get_template("node_about.html")
     page = template.render(title=f"More about {node.node_id}",
                            page_css="report.css",
                            page_js="report.js",
@@ -311,7 +319,7 @@ def make_aboutnode_page(Node_rdir: str, node: Node) -> str:
     print("OK")
     return page_file
 
-def make_all_aboutnode_pages():
+def make_all_about_node_pages():
     """Generate all about Node pages"""
 
     products_in_rdir = BBSvars.products_in_rdir
@@ -320,7 +328,7 @@ def make_all_aboutnode_pages():
         node2aboutpage[node.node_id] = make_aboutnode_page(Node_rdir, node)
     return
 
-def make_Rinstpkgs_page(Node_rdir: str, node: Node) -> str, str:
+def make_Rinstpkgs_page(Node_rdir: str, node: BBSreportutils.Node) -> Tuple[str, str]:
     """Create an R packages installed on Node html page
 
     Args:
@@ -337,7 +345,7 @@ def make_Rinstpkgs_page(Node_rdir: str, node: Node) -> str, str:
 
     packages = []
 
-    with Node_rdir.WOpen("NodeInfo/R-instpkgs.txt") as f
+    with Node_rdir.WOpen("NodeInfo/R-instpkgs.txt") as f:
         r_installed_packages_count = 0
         for line in f:
             package = bbs.parse.bytes2str(line).split()
@@ -347,7 +355,7 @@ def make_Rinstpkgs_page(Node_rdir: str, node: Node) -> str, str:
                              "Built": package[3]})
             r_packages_installed_count += 1
 
-    template = env.get_template("r_packages_installed.html")
+    template = ENV.get_template("r_packages_installed.html")
     page = template.render(title=f"R packages installed on {node.node_id}",
                            page_css="report.css",
                            page_js="report.js",
@@ -429,14 +437,14 @@ def _get_TIMEOUT_message(stage_labels:list) -> str:
     if len(labels) == 1:
         msg = labels[0]
     else:
-        msg = f"{', '.join(labels[:-1]} or {labels[-1]}"
+        msg = f"{', '.join(labels[:-1])} or {labels[-1]}"
     msg += " of package took more than "
     same_times = times[:-1] == times[1:]
     if same_times:
         msg += str(times[0])
     else:
         times = [str(t) for t in times]
-        msg += f"{', '.join(times[:-1]} or {times[-1]}"
+        msg += f"{', '.join(times[:-1])} or {times[-1]}"
     msg += " minutes"
     if not same_times:
         msg += ", respectively"
@@ -486,7 +494,7 @@ def _get_OK_message(stage_labels, simple_layout: bool = False) -> str:
         msg = stage_labels[0]
     else:
         conjunction = "and" if simple_layout else "or"
-        msg = f"{', '.join(stage_labels[:-1]} {conjunction} {stage_labels[-1]}"
+        msg = f"{', '.join(stage_labels[:-1])} {conjunction} {stage_labels[-1]}"
     return msg + " of package went OK"
 
 def _get_NotNeeded_message() -> str:
@@ -505,7 +513,7 @@ def _get_NA_message(stage_labels: list) -> str:
     if len(stage_labels) == 1:
         msg = stage_labels[0]
     else:
-        msg = f"{', '.join(stage_labels[:-1])} or {stage_labels[-1])}"
+        msg = f"{', '.join(stage_labels[:-1])} or {stage_labels[-1]}"
     msg += " result is not available because" + \
             " of an anomaly in the Build System"
     return msg
@@ -532,7 +540,7 @@ def _get_skipped_message(stage_labels: list) -> str:
     msg += " of package was skipped because the BUILD step failed"
     return msg
 
-def get_status_messages(simple_layout:bool = False) -> dict[str, str]
+def get_status_messages(simple_layout:bool = False) -> Dict[str, str]:
     """Get status messages
 
     Args:
@@ -610,7 +618,7 @@ def _get_Rcheck_path(pkg, node_id):
                         node_id, "checksrc", Rcheck_dir)
     return path
 
-def get_summary_output(pkg: str, node_id: str, stage: str) -> dict[str, str]:
+def get_summary_output(pkg: str, node_id: str, stage: str) -> Dict[str, str]:
     """Copy summary to raw results and return summary
 
     Args:
@@ -648,7 +656,7 @@ def write_info_dcf(pkg: str, node_id: str) -> None:
     return
 
 def get_file_contents(filepath: str, node_hostname,
-                      pattern: str = None) -> dict[str, str]:
+                      pattern: str = None) -> Dict[str, str]:
     """Return contents of file at filepath
 
     Encoding is unknown so the file is opened in binary mode and decoded with
@@ -711,7 +719,7 @@ def get_command_output(node_hostname: str, pkg: str, node_id: str,
     return get_file_contents(filepath, node_hostname)
 
 def get_installation_output(node_hostname: str, pkg: str,
-                            node_id: str) -> dict[str, str]:
+                            node_id: str) -> Dict[str, str]:
     """Get installation output
 
     Args:
@@ -734,7 +742,7 @@ def get_installation_output(node_hostname: str, pkg: str,
         contents = get_file_contents(filepath, node_hostname)
     return {output_filepath: contents}
 
-def build_test2filename_dict(dirpath: str, dups: list) -> dict[str, str]:
+def build_test2filename_dict(dirpath: str, dups: list) -> Dict[str, str]:
     """Return a dic of test files given a directory path"""
 
     p = re.compile('(.*)\.Rout.*')
@@ -750,7 +758,7 @@ def build_test2filename_dict(dirpath: str, dups: list) -> dict[str, str]:
     return test2filename
 
 def get_tests_outputs_from_dir(node_hostname: str, pkg: str,
-                               tests_dir: str) -> dict[str, str]:
+                               tests_dir: str) -> Dict[str, str]:
     """Get tests output given a directory
 
     Args:
@@ -777,7 +785,7 @@ def get_tests_outputs_from_dir(node_hostname: str, pkg: str,
     return contents
 
 def get_tests_output(node_hostname: str, pkg: str,
-                     node_id: str) -> dict[str, str]:
+                     node_id: str) -> Dict[str, str]:
     """Get tests output
 
     Args:
@@ -814,7 +822,7 @@ def get_tests_output(node_hostname: str, pkg: str,
     return contents
 
 def get_example_timings_from_file(node_hostname: str, Rcheck_dir: str,
-                                  filepath: str) -> dict[str, str]:
+                                  filepath: str) -> Dict[str, str]:
     """Return example timings
 
     Args:
@@ -834,7 +842,7 @@ def get_example_timings_from_file(node_hostname: str, Rcheck_dir: str,
     return contents
 
 def get_example_timings(node_hostname: str, pkg: str,
-                        node_id: str) -> dict[str, str]:
+                        node_id: str) -> Dict[str, str]:
     """Get example timings
 
     Args:
@@ -884,8 +892,8 @@ def make_package_raw_results(pkg: BBSPackageReference,
 
 def make_package_report(pkg: BBSPackageReference,
                         pkgs_rev_deps: dict | None,
-                        content: BBSContent,
-                        config: BBSConfiguration) -> None:
+                        content: BBSReportContent,
+                        config: BBSReportConfiguration) -> None:
     """Generate package report
 
     Args:
@@ -903,7 +911,7 @@ def make_package_report(pkg: BBSPackageReference,
     if BBSvars.buildtype in ["bioc", "bioc-mac-arm64"] and len(pkg_rev_deps):
         quickstats = BBSreportutils.compute_quickstats(pkg_rev_deps)
 
-    template = env.get_template("package_report.html")
+    template = ENV.get_template("package_report.html")
     page = template.render(title                = title,
                            build_type           = BBSvars.buildtype,
                            motd                 = motd,
@@ -921,9 +929,9 @@ def make_package_report(pkg: BBSPackageReference,
 
 def make_package_status_report(pkg: BBSPackageReference,
                                stage: str,
-                               node: Node,
-                               content: BBSContent,
-                               config: BBSConfiguration) -> None:
+                               node: BBSreportutils.Node,
+                               content: BBSReportContent,
+                               config: BBSReportConfiguration) -> None:
     """Generate package report
 
     Args:
@@ -941,7 +949,7 @@ def make_package_status_report(pkg: BBSPackageReference,
     tests_output = {}
     example_timings = {}
 
-    if stage.lower() == "checksrc":
+    if stage == "CHECKSRC":
         installation_output = get_installation_output(node.hostname, pkg.name, 
                                                       node.node_id)
         if BBSvars.buildtype != "bioc-longtests":
@@ -953,7 +961,7 @@ def make_package_status_report(pkg: BBSPackageReference,
     page_file = os.path.join(pkg, "{node.node_id}-{stage}.html")
     custom_note = BBSutils.getNodeSpec(node.node_id, 'displayOnHTMLReport',
                                        key_is_optional=True)
-    template = env.get_template("package_report.html")
+    template = ENV.get_template("package_report.html")
     page = template.render(title                = title,
                            build_type           = BBSvars.buildtype,
                            motd                 = content.motd,
@@ -970,14 +978,14 @@ def make_package_status_report(pkg: BBSPackageReference,
                            skipped_packages     = content.skipped_packages,
                            stages               = content.stages,
                            timestamp            = bbs.jobs.currentDateString(),
-                           version              = content.version))
+                           version              = content.version)
 
     with open(page_file, "w") as file:
         file.write(page)
     return
 
-def make_package_reports(content: BBSContent,
-                         config: BBSReportConfiguration) -> None
+def make_package_reports(content: BBSReportContent,
+                         config: BBSReportConfiguration) -> None:
     """Write html for all individual package reports
 
     Args:
@@ -1011,7 +1019,7 @@ def make_package_reports(content: BBSContent,
 ### Node-specific reports
 ##############################################################################
 
-def make_node_report(node: Node, content: BBSContent,
+def make_node_report(node: BBSreportutils.Node, content: BBSReportContent,
                      config: BBSReportConfiguration) -> str:
     """Write html for all packages on a Node
 
@@ -1028,16 +1036,16 @@ def make_node_report(node: Node, content: BBSContent,
     sys.stdout.flush()
 
     page_file = f"{node.node_id}-index.html"
-    template = env.get_template("packages_report.html")
+    template = ENV.get_template("packages_report.html")
 
     page = template.render(title            = f"All results on {node.node_id}",
                            build_type       = BBSvars.buildtype,
                            compact          = config.compact,
                            motd             = content.motd,
-                           node             = node,
+                           nodes            = [node],
                            packages         = content.pkgs,
                            quickstats       = content.quickstats,
-                           skipped_packages = content.skipped_packages,
+                           skipped_packages = content.skipped_pkgs,
                            stages           = content.stages,
                            timestamp        = bbs.jobs.currentDateString(),
                            version          = content.version)
@@ -1049,7 +1057,7 @@ def make_node_report(node: Node, content: BBSContent,
     sys.stdout.flush()
     return page_file
 
-def make_node_reports(content: BBSContent,
+def make_node_reports(content: BBSReportContent,
                       config: BBSReportConfiguration) -> None:
     """Write html files for all packages on all Nodes
 
@@ -1058,9 +1066,8 @@ def make_node_reports(content: BBSContent,
         config: report configuration
     """
 
-    if len(config.nodes) != 1:
-        for node in NODES:
-            make_node_report(node, content, config)
+    for node in BBSreportutils.NODES:
+        make_node_report(node, content, config)
     return
 
 
@@ -1068,7 +1075,7 @@ def make_node_reports(content: BBSContent,
 ### Main page (multiple platform report)
 ##############################################################################
 
-def make_main_report(content: BBSContent,
+def make_main_report(content: BBSReportContent,
                      config: BBSReportConfiguration) -> None:
     """Generate the main report
 
@@ -1081,7 +1088,7 @@ def make_main_report(content: BBSContent,
     sys.stdout.flush()
 
     title = f"Multiple platform build/check for BioC {config.version}"
-    template = env.get_template("packages_report.html")
+    template = ENV.get_template("packages_report.html")
     page_file = "index.html"
 
     if not config.compact:
@@ -1091,7 +1098,7 @@ def make_main_report(content: BBSContent,
                            build_type       = BBSvars.buildtype,
                            compact          = config.compact,
                            motd             = content.motd,
-                           nodes            = content.nodes,
+                           nodes            = BBSreportutils.NODES,
                            page_css         = config.css_file,
                            page_js          = config.js_file,
                            packages         = content.pkgs,
@@ -1116,10 +1123,10 @@ def make_reports(config: BBSReportConfiguration) -> None:
         config: report configuration
     """
 
-    content = BBSContent()
-    make_all_about_node_pages(content, config)
-    make_all_R_inst_pkgs_pages(content, config)
-    make_package_reports(content, config)
+    content = BBSReportContent()
+#    make_all_about_node_pages(content, config)
+#    make_all_R_inst_pkgs_pages(content, config)
+#    make_package_reports(content, config)
     make_node_reports(content, config)
     make_main_report(content, config)
     return
@@ -1163,7 +1170,7 @@ if __name__ == "__main__":
         sys.exit("=> EXIT.")
 
     print('BBS> ==============================================================')
-    print(f"BBS> [stage6d] STARTING stage6d at %s...{time.asctime()}")
+    print(f"BBS> [stage6d] STARTING stage6d at {time.asctime()} ...")
     sys.stdout.flush()
 
     config = BBSReportConfiguration(options['simple-layout'],
@@ -1186,34 +1193,35 @@ if __name__ == "__main__":
               f"{config.path}/")
         shutil.copy(BBSreportutils.PROPAGATION_STATUS_DB_file, config.path)
 
-    print("BBS> [stage6d] cd {config.path}/")
+    print(f"BBS> [stage6d] cd {config.path}/")
     os.chdir(config.path)
 
     BBSreportutils.write_htaccess_file()
 
-    if r_environ_user != None:
+    if config.r_environ_user:
         dst = os.path.join(config.path, 'Renviron.bioc')
-        print(f"BBS> [stage6d] cp {r_environ_user} {dst}")
-        shutil.copy(report.r_environ_user, dst)
+        print(f"BBS> [stage6d] cp {config.r_environ_user} {dst}")
+        shutil.copy(config.r_environ_user, dst)
 
-    if css_file != None:
-        print(f"BBS> [stage6d] cp {css_file} {config.path}/")
-        shutil.copy(report.css_file, config.path)
+    if config.css_file:
+        print(f"BBS> [stage6d] cp {config.css_file} {config.path}/")
+        shutil.copy(config.css_file, config.path)
 
-    if bgimg_file != None:
-        print(f"BBS> [stage6d] cp {bgimg_file} {config.path}/")
-        shutil.copy(report.bgimg_file, config.path)
+    if config.bgimg_file:
+        print(f"BBS> [stage6d] cp {config.bgimg_file} {config.path}/")
+        shutil.copy(config.bgimg_file, config.path)
 
-    if js_file != None:
-        print(f"BBS> [stage6d] cp {js_file} {config.path}/")
-        shutil.copy(report.js_file, config.path)
+    if config.js_file:
+        print(f"BBS> [stage6d] cp {config.js_file} {config.path}/")
+        shutil.copy(config.js_file, config.path)
 
     for color in ["Red", "Green", "Blue"]:
         icon = "%s/images/120px-%s_Light_Icon.svg.png" % \
                (os.getenv("BBS_HOME"), color)
         shutil.copy(icon, config.path)
 
-    print(f"BBS> [stage6d] Will generate HTML report for nodes: {NODES}")
+    print(f"BBS> [stage6d] Will generate HTML report for nodes: "
+          f"{BBSreportutils.NODES}")
 
     make_reports(config)
 

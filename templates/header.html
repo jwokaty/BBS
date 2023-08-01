@@ -1,6 +1,6 @@
       <header>
 
-        {% include navigation.html %}
+        {% include "navigation.html" %}
 
         <h1>
           {{ page_title }}
@@ -18,7 +18,7 @@
         </div>
         {% endif %}
 
-        {% if bioc-longtest %}
+        {% if build_type == "bioc-longtest" %}
         <div>
           <a href="https://contributions.bioconductor.org/long-tests.html">Subscribe to Long Tests Builds</a>
         </div>
@@ -36,19 +36,19 @@
 
         {% if nodes %}
         <div id="nodes">
-          {% include nodes.html %}
+          {% include "nodes.html" %}
         </div>
         {% endif %}
 
         {% if statuses %}
         <div id="statuses">
-          {% include statuses.html %}
+          {% include "statuses.html" %}
         </div>
         {% endif %}
 
         {% if quickstats %}
         <div id="quickstats">
-          {% include quickstats.html %}
+          {% include "quickstats.html" %}
         </div>
         {% endif %}
 

@@ -32,13 +32,13 @@
           </div>
           {% endif %}
         </div>
-        {% for node in nodes.items() %}
+        {% for node in nodes %}
         <div class="row">
           <div class="col">
-            {{ node['name'] }}
+            {{ node.name }}
           </div>
           <div class="col">
-            {{ node['os'] }}
+            {{ node.os }}
           </div>
           <div class="col">
             {% for timeout, error, warning, ok in node[2:4] %}
@@ -56,7 +56,6 @@
             </div>
             {% endfor %}
           </div>
-          {% endif %}
         </div>
         {% endfor %}
       </article>

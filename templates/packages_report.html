@@ -3,7 +3,7 @@
 {% block content %}
       {% if compact %}
         {% include "package_compact.html" %}
-      {% if node %}
+      {% elif node %}
         {% include "package_node.html" %}
       {% else %}
         {% include "package_full.html" %}
