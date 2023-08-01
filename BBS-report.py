@@ -26,10 +26,28 @@ import BBSutils
 import BBSvars
 import BBSreportutils
 
+
 BBS_HOME = BBSvars.BBS_home
 ENV = Environment(loader=FileSystemLoader(os.path.join(BBS_HOME, "templates")))
 MEAT_INDEX = bbs.parse.get_meat_packages(BBSutils.meat_index_file,
                                          as_dict=True)
+
+def get_pkg_overall_status(pkg, statuses, skipped_pkgs):
+    if pkg in skipped_pkgs or "ERROR" in statuses:
+        status = "ERROR"
+    elif "TIMEOUT" in statuses:
+        status = "TIMEOUT"
+    elif "WARNINGS" in statuses:
+        status = "WARNINGS"
+    elif "NA" in statuses:
+        status = "NA"
+    elif "OK" in statuses:
+        status = "OK"
+    else:
+        status = "unknown"
+    return status
+
+ENV.globals["get_pkg_overall_status"] = get_pkg_overall_status
 
 class BBSReportConfiguration:
 
@@ -587,21 +605,6 @@ def _url_to_pkg_landing_page(pkg: str) -> str:
     url = f"/packages/{bioc_version}/{pkg}"
     return url
 
-def get_pkg_overall_status(pkg, statuses, content):
-    if pkg in content.skipped_pkgs or "ERROR" in statuses:
-        status = "ERROR"
-    elif "TIMEOUT" in statuses:
-        status = "TIMEOUT"
-    elif "WARNINGS" in statuses:
-        status = "WARNINGS"
-    elif "NA" in statuses:
-        status = "NA"
-    elif "OK" in statuses:
-        status = "OK"
-    else:
-        status = "unknown"
-    return status
-
 def _get_incoming_raw_result_path(pkg, node_id, stage, suffix):
     filename = f"{pkg}.{stage}-{suffix}"
     path = os.path.join(BBSvars.central_rdir_path, "products-in",
@@ -1087,7 +1090,7 @@ def make_main_report(content: BBSReportContent,
     print(f"BBS> [make_main_report] BEGIN ...")
     sys.stdout.flush()
 
-    title = f"Multiple platform build/check for BioC {config.version}"
+    title = f"Multiple platform build/check for BioC {content.version}"
     template = ENV.get_template("packages_report.html")
     page_file = "index.html"
 
@@ -1103,7 +1106,7 @@ def make_main_report(content: BBSReportContent,
                            page_js          = config.js_file,
                            packages         = content.pkgs,
                            quickstats       = content.quickstats,
-                           skipped_packages = content.skipped_packages,
+                           skipped_packages = content.skipped_pkgs,
                            stages           = content.stages,
                            timestamp        = bbs.jobs.currentDateString(),
                            version          = content.version)
