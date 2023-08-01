@@ -911,7 +911,7 @@ def make_package_report(pkg: BBSPackageReference,
                            page_css             = config.css_file,
                            page_js              = config.js_file,
                            package              = pkg,
-                           dependent_packages   = pkg_rev_deps,
+                           dependent_packages   = content.pkg_rev_deps,
                            quickstats           = quickstats,
                            timestamp            = bbs.jobs.currentDateString())
 
@@ -937,34 +937,40 @@ def make_package_status_report(pkg: BBSPackageReference,
     summary = get_summary_output(pkg.name, node.node_id, stage)
     command_output = get_command_output(node.hostname, pkg.name, 
                                         node.node_id, stage)
-    if stage.lower() == "checksrc" and BBSvars.buildtype == "bioc-longtests":
-        installation_output = get_installation_output(node.hostname, pkg.name, 
-                                                      node.node_id)
+    installation_output = {}
+    tests_output = {}
+    example_timings = {}
+
     if stage.lower() == "checksrc":
         installation_output = get_installation_output(node.hostname, pkg.name, 
                                                       node.node_id)
-        tests_output = get_tests_output(node.hostname, pkg.name,
-                                        node.node_id)
-        example_timings = get_example_timings(node.hostname, pkg.name,
-                                              node.node_id)
-    elif stage.lower() == "buildbin":
+        if BBSvars.buildtype != "bioc-longtests":
+            tests_output = get_tests_output(node.hostname, pkg.name,
+                                            node.node_id)
+            example_timings = get_example_timings(node.hostname, pkg.name,
+                                                  node.node_id)
     page_title = f"{stage} results for {pkg.name} on {node.node_id}"
     page_file = os.path.join(pkg, "{node.node_id}-{stage}.html")
     custom_note = BBSutils.getNodeSpec(node.node_id, 'displayOnHTMLReport',
                                        key_is_optional=True)
     template = env.get_template("package_report.html")
-    page = template.render(title            = title,
-                           build_type       = BBSvars.buildtype,
-                           motd             = content.motd,
-                           ntd              = get_notes_to_developers(pkg),
-                           custom_note      = custom_note,
-                           page_css         = config.css_file,
-                           page_js          = config.js_file,
-                           package          = pkg,
-                           skipped_packages = content.skipped_packages,
-                           stages           = content.stages,
-                           timestamp        = bbs.jobs.currentDateString(),
-                           version          = content.version))
+    page = template.render(title                = title,
+                           build_type           = BBSvars.buildtype,
+                           motd                 = content.motd,
+                           ntd                  = get_notes_to_developers(pkg),
+                           custom_note          = custom_note,
+                           page_css             = config.css_file,
+                           page_js              = config.js_file,
+                           package              = pkg,
+                           summary              = summary,
+                           command_output       = command_output,
+                           installation_output  = installation_output,
+                           example_timings      = example_timings,
+                           tests_output         = tests_output,
+                           skipped_packages     = content.skipped_packages,
+                           stages               = content.stages,
+                           timestamp            = bbs.jobs.currentDateString(),
+                           version              = content.version))
 
     with open(page_file, "w") as file:
         file.write(page)
@@ -995,7 +1001,6 @@ def make_package_reports(content: BBSContent,
                 for stage in get_stages():
                     make_package_status_report(pkg, stage, node, config,
                                                contents)
-
 
     print(f"BBS> [make_package_reports] Package Report: END.")
     sys.stdout.flush()
