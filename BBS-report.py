@@ -226,17 +226,17 @@ class BBSReportContent:
         buildtype = BBSvars.buildtype
 
         msg = {}
-        msg["timeout"] = _get_TIMEOUT_message(stages)
-        msg["error"] = _get_ERROR_message(stages)
+        msg["timeout"] = self._get_TIMEOUT_message(stages)
+        msg["error"] = self._get_ERROR_message(stages)
 
         if 'CHECK' in stages:
-            msg["check"] = _get_WARNINGS_message(stages)
+            msg["check"] = self._get_WARNINGS_message(stages)
 
-        msg["ok"] = _get_OK_message(stages)
-        msg["na"] = _get_NA_message(stages)
+        msg["ok"] = self._get_OK_message(stages)
+        msg["na"] = self._get_NA_message(stages)
 
         if 'CHECK' in stages or 'BUILD BIN' in stages:
-            msg["skipped"] = _get_skipped_message(stages)
+            msg["skipped"] = self._get_skipped_message(stages)
 
         return msg
 
