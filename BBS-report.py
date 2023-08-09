@@ -220,11 +220,10 @@ class BBSReportContent:
         return msg
 
     @staticmethod
-    def get_status_messages() -> Dict[str, str]:
+    def get_status_messages(stages: list) -> Dict[str, str]:
         """Get status messages"""
 
         buildtype = BBSvars.buildtype
-        stages = _get_stage_labels()
 
         msg = {}
         msg["timeout"] = _get_TIMEOUT_message(stages)
@@ -249,8 +248,8 @@ class BBSReportContent:
         self.pkgs = list(MEAT_INDEX.keys()) + self.skipped_pkgs
         self.pkgs.sort(key=str.lower)
         self.version = BBSvars.bioc_version
-        self.stages = _get_stage_labels()
-        self.explanations = get_status_messages()
+        self.stages = self._get_stage_labels()
+        self.explanations = get_status_messages(self.stages)
 
         BBSreportutils.set_NODES(BBSutils.getenv('BBS_REPORT_NODES'))
 
