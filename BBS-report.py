@@ -249,7 +249,7 @@ class BBSReportContent:
         self.pkgs.sort(key=str.lower)
         self.version = BBSvars.bioc_version
         self.stages = self._get_stage_labels()
-        self.explanations = get_status_messages(self.stages)
+        self.explanations = self.get_status_messages(self.stages)
 
         BBSreportutils.set_NODES(BBSutils.getenv('BBS_REPORT_NODES'))
 
