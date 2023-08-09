@@ -42,18 +42,18 @@
           </div>
           <div class="col">
            {% for stage, (timeout, error, warnings, ok, notneeded) in stats.items() %}
-            <div>
+            <div class="col">
               {{ timeout }}
             </div>
-            <div>
+            <div class="col">
               {{ error }}
-            </div>
+            </div class="col">
 	    {% if stage == "checksrc" %}
-            <div>
+            <div class="col">
               {{ warning }}
             </div>
 	    {% endif %}
-            <div>
+            <div class="col">
               {{ ok }}
             </div>
           {% endfor %}

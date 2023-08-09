@@ -5,54 +5,66 @@
             <div class="row">
               Package status is indicated by one of the following
             </div>
+            {% if "timeout" in explanations %}
             <div class="row row-cols-2">
               <div class="col">
                 Timeout 
               </div>
               <div class="col">
-               {{ timeout.explanation }} 
+                {{ explanations['timeout'] }} 
               </div>
             </div>
+            {% endif %}
+            {% if "error" in explanations %}
             <div class="row row-cols-2">
               <div class="col">
                 Error 
               </div>
               <div class="col">
-               {{ error.explanation }} 
+                {{ explanations['error'] }} 
               </div>
             </div>
+            {% endif %}
+            {% if "warning" in explanations %}
             <div class="row row-cols-2">
               <div class="col">
                 Warning 
               </div>
               <div class="col">
-               {{ warning.explanation }} 
+                {{ explanations['warning'] }} 
               </div>
             </div>
+            {% endif %}
+            {% if "ok" in explanations %}
             <div class="row row-cols-2">
               <div class="col">
                 OK 
               </div>
               <div class="col">
-               {{ ok.explanation }} 
+               {{ explanations['ok'] }} 
               </div>
             </div>
+            {% endif %}
+            {% if "na" in explanations %}
             <div class="row row-cols-2">
               <div class="col">
                 NA 
               </div>
               <div class="col">
-               {{ na.explanation }} 
+                {{ explanations['na'] }} 
               </div>
             </div>
+            {% endif %}
+            {% if "skipped" in explanations %}
             <div class="row row-cols-2">
               <div class="col">
                 Skipped
               </div>
               <div class="col">
-               {{ skipped.explanation }} 
+                {{ explanations['skipped'] }} 
               </div>
             </div>
+            {% endif %}
             <div class="row">
               Package status is indicated by one of the following
             </div>

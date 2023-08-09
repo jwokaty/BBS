@@ -66,7 +66,8 @@ class BBSPackageReference:
 
     def __init__(self, name: str, maintainer: str, version: str,
                  package_status: str, git_url: str, git_branch: str,
-                 git_last_commit: str, git_last_commit_date: str) -> None:
+                 git_last_commit: str, git_last_commit_date: str,
+                 stages: list) -> None:
 
         self.name = name
         self.maintainer = maintainer
@@ -81,18 +82,18 @@ class BBSPackageReference:
         sys.stdout.flush()
 
         self.results = {}
-        build_type = BBSvars.buildtype
+        buildtype = BBSvars.buildtypr
         for node in BBSreportutils.NODES:
             if self.name not in BBSreportutils.supported_pkgs(node):
                 continue
 
             self.results[node.node_id] = {}
-            for stage in BBSreportutils.stages_to_display(build_type):
+            for stage in stages:
                 stage = stage.lower()
-                if (build_type != "bioc-longtests" and stage == "install") or \
-                    (build_type not in ["workflows", "books"] and stage == "checksrc") or \
-                    (BBSreportutils.is_doing_buildbin(node) and stage == "buildbin") or \
-                    stage == "buildsrc":
+                if (buildtype != "bioc-longtests" and stage == "install") or \
+                    (buildtype not in ["workflows", "books"] and stage == "check") or \
+                    (BBSreportutils.is_doing_buildbin(node) and stage == "build bin") or \
+                    stage == "build":
                     self.results[node.node_id][stage] = \
                         BBSreportutils.get_pkg_status(name, node.node_id, stage)
                     print(f"self.results[{node.node_id}][{stage}] = "
@@ -108,18 +109,137 @@ class BBSPackageReference:
               f"{self.git_last_commit_date} = git_last_commit_date\n")
         print("OK")
 
-#    def set_info(self, maintainer: str, version: str, package_status: str,
-#                 git_url: str, git_branch: str, git_last_commit: str,
-#                 git_last_commit_date: str) -> None:
-#
-#        self.maintainer = maintainer
-#        self.version = version
-#        self.git_url = git_url
-#        self.git_branch = git_branch
-#        self.git_last_commit = git_last_commit
-#        self.git_last_commit_date = git_last_commit_date
-
 class BBSReportContent:
+
+    @staticmethod
+    def _get_stage_labels():
+        stage_labels = []
+        buildtype = BBSvars.buildtype
+        for stage in BBSreportutils.stages_to_display(buildtype):
+            stage_labels.append(BBSreportutils.stage_label(stage))
+        return stage_labels
+
+    @staticmethod
+    def _get_TIMEOUT_message(stages: list) -> str:
+        """Generate TIMEOUT explanation message"""
+
+        labels = []
+        times = []
+        if "INSTALL" in stages:
+            labels.append("INSTALL")
+            times.append(int(BBSvars.INSTALL_timeout / 60.0))
+        if "BUILD" in stages:
+            labels.append("BUILD")
+            times.append(int(BBSvars.BUILD_timeout / 60.0))
+        if "CHECK" in stages:
+            labels.append("CHECK")
+            times.append(int(BBSvars.CHECK_timeout / 60.0))
+        if "BUILD BIN" in stages:
+            labels.append("BUILD BIN")
+            times.append(int(BBSvars.BUILDBIN_timeout / 60.0))
+        if len(labels) == 1:
+            msg = labels[0]
+        else:
+            msg = f"{', '.join(labels[:-1])} or {labels[-1]}"
+        msg += " of package took more than "
+        same_times = times[:-1] == times[1:]
+        if same_times:
+            msg += str(times[0])
+        else:
+            times = [str(t) for t in times]
+            msg += f"{', '.join(times[:-1])} or {times[-1]}"
+        msg += " minutes"
+        if not same_times:
+            msg += ", respectively"
+        return msg
+
+    @staticmethod
+    def _get_ERROR_message(stages) -> str:
+        """Generate ERROR explanation message"""
+
+        labels = stages.copy()
+        if len(labels) == 1 and labels[0] == "CHECK":
+            msg = "CHECK of package produced errors"
+        else:
+            CHECK_in_labels = "CHECK" in labels
+            if CHECK_in_labels:
+                labels.remove("CHECK")
+            if len(labels) == 1:
+                msg = labels[0]
+            else:
+                msg = f"{', '.join(labels[:-1])} or {labels[-1]}"
+            msg += " of package failed"
+            if CHECK_in_labels:
+                msg += ", or CHECK produced errors"
+        return "Bad DESCRIPTION file, or " + msg
+
+    @staticmethod
+    def _get_WARNINGS_message() -> str:
+        return "CHECK of package produced warnings"
+
+    @staticmethod
+    def _get_OK_message(stages: list) -> str:
+        """Generate OK explanation message"""
+
+        if len(stages) == 1:
+            msg = stages[0]
+        else:
+            msg = f"{', '.join(stages[:-1])} or {stages[-1]}"
+        return msg + " of package went OK"
+
+    @staticmethod
+    def _get_NotNeeded_message() -> str:
+        return "INSTALL of package was not needed (click on glyph to see why)"
+
+    @staticmethod
+    def _get_NA_message(stages: list) -> str:
+        """Generate NA explanation message"""
+
+        if len(stages) == 1:
+            msg = stages[0]
+        else:
+            msg = f"{', '.join(stages[:-1])} or {stages[-1]}"
+        msg += " result is not available because" + \
+                " of an anomaly in the Build System"
+        return msg
+
+    @staticmethod
+    def _get_skipped_message(stages: list) -> str:
+        """Generate skipped explanation message"""
+
+        labels = []
+        if "CHECK" in stages:
+            labels.append("CHECK")
+        if "BUILD BIN" in stages:
+            labels.append("BUILD BIN")
+        if len(labels) == 1:
+            msg = labels[0]
+        else:
+            msg = f"{', '.join(labels[:-1])} or {labels[-1]}"
+        msg += " of package was skipped because the BUILD step failed"
+        return msg
+
+    @staticmethod
+    def get_status_messages() -> Dict[str, str]:
+        """Get status messages"""
+
+        buildtype = BBSvars.buildtype
+        stages = _get_stage_labels()
+
+        msg = {}
+        msg["timeout"] = _get_TIMEOUT_message(stages)
+        msg["error"] = _get_ERROR_message(stages)
+
+        if 'CHECK' in stages:
+            msg["check"] = _get_WARNINGS_message(stages)
+
+        msg["ok"] = _get_OK_message(stages)
+        msg["na"] = _get_NA_message(stages)
+
+        if 'CHECK' in stages or 'BUILD BIN' in stages:
+            msg["skipped"] = _get_skipped_message(stages)
+
+        return msg
 
     def __init__(self) -> None:
 
@@ -129,7 +249,8 @@ class BBSReportContent:
         self.pkgs = list(MEAT_INDEX.keys()) + self.skipped_pkgs
         self.pkgs.sort(key=str.lower)
         self.version = BBSvars.bioc_version
-        self.stages = BBSreportutils.stages_to_display(BBSvars.buildtype)
+        self.stages = _get_stage_labels()
+        self.explanations = get_status_messages()
 
         BBSreportutils.set_NODES(BBSutils.getenv('BBS_REPORT_NODES'))
 
@@ -158,6 +279,8 @@ class BBSReportContent:
 #            self.quickstats = \
 #                BBSreportutils.compute_quickstats(self.pkgs_inner_rev_deps)
 
+        self.snapshot = BBSreportutils.get_vcs_meta(None, "Snapshot Date")
+
         print(f"BBS> [stage6d] Getting info for all packages ...")
         sys.stdout.flush()
 
@@ -166,16 +289,32 @@ class BBSReportContent:
                 if self.pkgs[i] not in BBSreportutils.supported_pkgs(node):
                     continue
 
-                dcf_record = MEAT_INDEX[self.pkgs[i]]
+                dcf_meat_index = MEAT_INDEX[self.pkgs[i]]
+                dcf_gitlog = os.path.join(BBSvars.central_rdir_path, 'gitlog',
+                                          f"git-log-{self.pkgs[i]}.dcf")
+                git_url = BBSreportutils.WReadDcfVal(BBSvars.Central_rdir,
+                                                     dcf_gitlog, "git_url")
+                git_branch = BBSreportutils.WReadDcfVal(BBSvars.Central_rdir,
+                                                        dcf_gitlog,
+                                                        "git_branch")
+                git_last_commit = \
+                    BBSreportutils.WReadDcfVal(BBSvars.Central_rdir,
+                                               dcf_gitlog, "git_last_commit")
+                git_last_commit_date = \
+                    BBSreportutils.WReadDcfVal(BBSvars.Central_rdir,
+                                               dcf_gitlog,
+                                               "git_last_commit_date")
+
                 self.pkgs[i] = \
                     BBSPackageReference(self.pkgs[i],
-                                        dcf_record['Maintainer'],
-                                        dcf_record['Version'],
-                                        dcf_record.get('PackageStatus'),
-                                        dcf_record.get('git_url'),
-                                        dcf_record.get('git_branch'),
-                                        dcf_record.get('git_last_commit'),
-                                        dcf_record.get('git_last_commit_date'))
+                                        dcf_meat_index['Maintainer'],
+                                        dcf_meat_index['Version'],
+                                        dcf_meat_index.get('PackageStatus'),
+                                        git_url,
+                                        git_branch,
+                                        git_last_commit,
+                                        git_last_commit_date,
+                                        self.stages)
 
         print("OK")
 
@@ -424,175 +563,6 @@ def make_all_Rinstpkgs_pages() -> None:
 #    return nodes
 
 
-##############################################################################
-### write_explain_glyph_table()
-##############################################################################
-
-def _get_TIMEOUT_message(stage_labels:list) -> str:
-    """Generate TIMEOUT explanation message
-
-    Args:
-        stage_labels: label of stages in report
-
-    Returns:
-        explanation message
-    """
-
-    labels = []
-    times = []
-    if "INSTALL" in stage_labels:
-        labels.append("INSTALL")
-        times.append(int(BBSvars.INSTALL_timeout / 60.0))
-    if "BUILD" in stage_labels:
-        labels.append("BUILD")
-        times.append(int(BBSvars.BUILD_timeout / 60.0))
-    if "CHECK" in stage_labels:
-        labels.append("CHECK")
-        times.append(int(BBSvars.CHECK_timeout / 60.0))
-    if "BUILD BIN" in stage_labels:
-        labels.append("BUILD BIN")
-        times.append(int(BBSvars.BUILDBIN_timeout / 60.0))
-    if len(labels) == 1:
-        msg = labels[0]
-    else:
-        msg = f"{', '.join(labels[:-1])} or {labels[-1]}"
-    msg += " of package took more than "
-    same_times = times[:-1] == times[1:]
-    if same_times:
-        msg += str(times[0])
-    else:
-        times = [str(t) for t in times]
-        msg += f"{', '.join(times[:-1])} or {times[-1]}"
-    msg += " minutes"
-    if not same_times:
-        msg += ", respectively"
-    return msg
-
-def _get_ERROR_message(stage_labels:list) -> str:
-    """Generate ERROR explanation message
-
-    Args:
-        stage_labels: label of stages in report
-
-    Returns:
-        explanation message
-    """
-
-    labels = stage_labels.copy()
-    if len(labels) == 1 and labels[0] == "CHECK":
-        msg = "CHECK of package produced errors"
-    else:
-        CHECK_in_labels = "CHECK" in labels
-        if CHECK_in_labels:
-            labels.remove("CHECK")
-        if len(labels) == 1:
-            msg = labels[0]
-        else:
-            msg = f"{', '.join(labels[:-1])} or {labels[-1]}"
-        msg += " of package failed"
-        if CHECK_in_labels:
-            msg += ", or CHECK produced errors"
-    return "Bad DESCRIPTION file, or " + msg
-
-def _get_WARNINGS_message() -> str:
-    return "CHECK of package produced warnings"
-
-def _get_OK_message(stage_labels, simple_layout: bool = False) -> str:
-    """Generate OK explanation message
-
-    Args:
-        stage_labels: label of stages in report
-        simple_layout: change message if all or only overall status is displayed
-
-    Returns:
-        explanation message
-    """
-
-    if len(stage_labels) == 1:
-        msg = stage_labels[0]
-    else:
-        conjunction = "and" if simple_layout else "or"
-        msg = f"{', '.join(stage_labels[:-1])} {conjunction} {stage_labels[-1]}"
-    return msg + " of package went OK"
-
-def _get_NotNeeded_message() -> str:
-    return "INSTALL of package was not needed (click on glyph to see why)"
-
-def _get_NA_message(stage_labels: list) -> str:
-    """Generate NA explanation message
-
-    Args:
-        stage_labels: label of stages in report
-
-    Returns:
-        explanation message
-    """
-
-    if len(stage_labels) == 1:
-        msg = stage_labels[0]
-    else:
-        msg = f"{', '.join(stage_labels[:-1])} or {stage_labels[-1]}"
-    msg += " result is not available because" + \
-            " of an anomaly in the Build System"
-    return msg
-
-def _get_skipped_message(stage_labels: list) -> str:
-    """Generate skipped explanation message
-
-    Args:
-        stage_labels: label of stages in report
-
-    Returns:
-        explanation message
-    """
-
-    labels = []
-    if "CHECK" in stage_labels:
-        labels.append("CHECK")
-    if "BUILD BIN" in stage_labels:
-        labels.append("BUILD BIN")
-    if len(labels) == 1:
-        msg = labels[0]
-    else:
-        msg = f"{', '.join(labels[:-1])} or {labels[-1]}"
-    msg += " of package was skipped because the BUILD step failed"
-    return msg
-
-def get_status_messages(simple_layout:bool = False) -> Dict[str, str]:
-    """Get status messages
-
-    Args:
-        simple_layout: True if not full layout
-
-    Returns:
-        explanation for each possible status in a build
-    """
-
-    buildtype = BBSvars.buildtype
-    wide_table = simple_layout or \
-                 not BBSreportutils.display_propagation_status(buildtype)
-    stage_labels = get_stages()
-
-    msg = {}
-    msg["timeout"] = _get_TIMEOUT_message(stage_labels)
-    msg["error"] = _get_ERROR_message(stage_labels)
-
-    if 'CHECK' in stage_labels:
-        msg["check"] = _get_WARNINGS_message()
-
-    msg["ok"] = _get_OK_message(stage_labels, simple_layout)
-    msg["na"] = _get_NA_message(stage_labels)
-
-    if not simple_layout and \
-       ('CHECK' in stage_labels or 'BUILD BIN' in stage_labels):
-        msg["skipped"] = _get_skipped_message(stage_labels)
-
-    return msg
-
-
-##############################################################################
-### Glyph cards (gcards) and gcard lists
-##############################################################################
 
 def _url_to_pkg_landing_page(pkg: str) -> str:
     """Get the URL for the package's landing page"""
@@ -642,7 +612,7 @@ def get_summary_output(pkg: str, node_id: str, stage: str) -> Dict[str, str]:
 def write_info_dcf(pkg: str, node_id: str) -> None:
     """Write package information into a DCF file"""
 
-    filename = 'git-log-%s.dcf' % (pkg)
+    filename = f"git-log-{pkg}.dcf"
     filepath = os.path.join(BBSvars.central_rdir_path, 'gitlog', filename)
     dest = os.path.join(pkg, 'raw-results', 'info.dcf')
     shutil.copyfile(filepath, dest)
@@ -910,13 +880,13 @@ def make_package_report(pkg: BBSPackageReference,
     page_file = os.path.join(pkg, "index.html")
     title = f"All results for package {pkg.name}"
     motd = os.environ['BBS_REPORT_MOTD'] or ""
-                           
+
     if BBSvars.buildtype in ["bioc", "bioc-mac-arm64"] and len(pkg_rev_deps):
         quickstats = BBSreportutils.compute_quickstats(pkg_rev_deps)
 
     template = ENV.get_template("package_report.html")
     page = template.render(title                = title,
-                           build_type           = BBSvars.buildtype,
+                           buildtype           = BBSvars.buildtype,
                            motd                 = motd,
                            ntd                  = get_notes_to_developers(pkg),
                            page_css             = config.css_file,
@@ -966,7 +936,7 @@ def make_package_status_report(pkg: BBSPackageReference,
                                        key_is_optional=True)
     template = ENV.get_template("package_report.html")
     page = template.render(title                = title,
-                           build_type           = BBSvars.buildtype,
+                           buildtype           = BBSvars.buildtype,
                            motd                 = content.motd,
                            ntd                  = get_notes_to_developers(pkg),
                            custom_note          = custom_note,
@@ -1042,14 +1012,17 @@ def make_node_report(node: BBSreportutils.Node, content: BBSReportContent,
     template = ENV.get_template("packages_report.html")
 
     page = template.render(title            = f"All results on {node.node_id}",
-                           build_type       = BBSvars.buildtype,
+                           buildtype       = BBSvars.buildtype,
                            compact          = config.compact,
                            motd             = content.motd,
                            nodes            = [node],
                            packages         = content.pkgs,
                            quickstats       = content.quickstats,
+                           show_statuses    = True,
                            skipped_packages = content.skipped_pkgs,
+                           snapshot         = content.snapshot,
                            stages           = content.stages,
+                           explanations     = content.explanations,
                            timestamp        = bbs.jobs.currentDateString(),
                            version          = content.version)
 
@@ -1098,7 +1071,7 @@ def make_main_report(content: BBSReportContent,
         page_file = "long-report.html"
 
     page = template.render(title            = title,
-                           build_type       = BBSvars.buildtype,
+                           buildtype       = BBSvars.buildtype,
                            compact          = config.compact,
                            motd             = content.motd,
                            nodes            = BBSreportutils.NODES,

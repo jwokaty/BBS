@@ -25,12 +25,12 @@
         {% endif %}
 
         <div id="report_timestamp">
-          Generated {{ report_date }}
+          Generated {{ timestamp }}
         </div>
 
-        {% if snapshot_date %}
+        {% if snapshot %}
         <div id="snapshot_timestamp">
-          Snapshot Taken Approximately {{ snapshot_date }}
+          Snapshot Taken Approximately {{ snapshot }}
         </div>
         {% endif %}
 
@@ -40,7 +40,7 @@
         </div>
         {% endif %}
 
-        {% if statuses %}
+        {% if show_statuses %}
         <div id="statuses">
           {% include "statuses.html" %}
         </div>
