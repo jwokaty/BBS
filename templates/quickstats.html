@@ -1,63 +1,62 @@
 {# quickstats.html #}
 
-      <article id="quickstats">
+      <h2>Quick Stats</h2>
 
-        <h2>Quick Stats</h2>
-
-	{% for node, stats in quickstats.items() %}
-        <div class="row">
-          <div class="col">
-            Node
-          </div>
-          <div class="col">
-            OS / Arch
-          </div>
-          {% if "INSTALL" in stages %}
-          <div class="col">
-            Install
-          </div>
-          {% endif %}
-          {% if "BUILD" in stages %}
-          <div class="col">
-            Build
-          </div>
-          {% endif %}
-          {% if "CHECKSRC" in stages %}
-          <div class="col">
-            Check
-          </div>
-          {% endif %}
-          {% if "BUILDBIN" in stages %}
-          <div class="col">
-            Build Bin
-          </div>
-          {% endif %}
+      <div class="row">
+        <div class="col">
+          Node
         </div>
-        <div class="row">
-          <div class="col">
-            {{ node.name }}
+        <div class="col">
+          OS / Arch
+        </div>
+        {% if "install" in stages %}
+        <div class="col">
+          Install
+        </div>
+        {% endif %}
+        {% if "buildsrc" in stages %}
+        <div class="col">
+          Build
+        </div>
+        {% endif %}
+        {% if "checksrc" in stages %}
+        <div class="col">
+          Check
+        </div>
+        {% endif %}
+        {% if "buildbin" in stages %}
+        <div class="col">
+          Build Bin
+        </div>
+        {% endif %}
+      </div>
+
+      {% for hostname, attributes in quickstats.items() %}
+      <div class="row">
+        <div class="col">
+          {{ hostname }}
+        </div>
+        <div class="col">
+          {{ attributes['os_arch'] }}
+        </div>
+        {% for stage in stages %}
+        <div class="col {{ stage }}">
+          <div class="col {{ stage }} timeout">
+            {{ attributes[stage][0] }}
           </div>
-          <div class="col">
-            {{ node.os }}
+          <div class="col {{ stage }} error">
+            {{ attributes[stage][1] }}
+          </div class="col">
+          {% if stage == "checksrc" %}
+          <div class="col {{ stage }} warning">
+            {{ attributes[stage][2] }}
           </div>
-          <div class="col">
-           {% for stage, (timeout, error, warnings, ok, notneeded) in stats.items() %}
-            <div class="col">
-              {{ timeout }}
-            </div>
-            <div class="col">
-              {{ error }}
-            </div class="col">
-	    {% if stage == "checksrc" %}
-            <div class="col">
-              {{ warning }}
-            </div>
-	    {% endif %}
-            <div class="col">
-              {{ ok }}
-            </div>
-          {% endfor %}
+          {% endif %}
+          <div class="col {{ stage }} ok">
+            {{ attributes[stage][3] }}
           </div>
         </div>
         {% endfor %}
-      </article>
+        </div>
+      </div>
+      {% endfor %}

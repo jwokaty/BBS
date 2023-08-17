@@ -22,20 +22,20 @@
             <div class="row row-cols-5">
             {% for node in nodes %}
               <div class="col col-sm-1">
-                <a href="{{ nodes['url'] }}">{{ nodes['name'] }}</a>
+                <a href="{{ node['hostname'] }}-NodeInfo.html">{{ node['hostname'] }}</a>
               </div>
               <div class="col col-sm-2">
-                {{ nodes['os'] }}
+                {{ node['os'] }}
               </div>
               <div class="col col-sm-1">
-                {{ nodes['arch'] }}
+                {{ node['arch'] }}
               </div>
               <div class="col col-sm-3">
-                {{ nodes['r_version'] }}
+                {{ node['r_version'] }}
               </div>
               <div class="col col-sm-2">
-                <a href="{{ nodes['r_installed_packages_url'] }}">
-                  {{ nodes['r_installed_packages_count'] }}
+                <a href="{{ node['hostname'] }}-R-instpkgs.html">
+                  {{ node['r_installed_packages'] }}
                 </a>
               </div>
             {% endfor %}

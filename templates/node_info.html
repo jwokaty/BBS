@@ -18,20 +18,30 @@
            Value ('R CMD config <VAR>' output) 
           </div>
         </div>
-          {% for r_variable in command['r_variables'] %}
-          <div class="row">
-            <div class="col">
-              {{ r_variable }} 
-            </div>
-            <div class="col">
-              {{ r_variable['r_variable_value'] }} 
-            </div>
+        {% for r_var in command['r_vars'] %}
+        <div class="row">
+          <div class="col">
+            {{ r_var }} 
           </div>
-          {% endfor %}
-          <div class="row">
-            {{ command['sys_cmd_ver'] }}
+          <div class="col">
+            {{ command['r_var_val'][r_var] }} 
           </div>
+        </div>
+        {% endfor %}
         {% endif %}
+        <div class="row">
+          <div class="col">
+	    <div>
+	     {% if command['compiler'] %}
+	     <strong>Compiler version</strong>
+	     <span>('{{ command['r_vars'][0] }} --version' output):</span>
+	     {% else %}
+	     <strong>{{ command['name'] }} version</strong>
+	     <span>('{{ command['name'] }} --version' output):</span>
+	     {% endif %}
+            {{ command['sys_cmd_ver'] }}
+	  </div>
+        </div>
       </article>
       {% endfor %}
 

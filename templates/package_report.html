@@ -2,21 +2,19 @@
 
 {% block content %}
 
-      {% set packages = package %}
-
       {% include "package.html" %}
 
-      {% if dependent_packages %}
+      {% if packages_rev_deps %}
 
-        <title>
+        <h2>
           Results for Bioconductor software packages depending directly on {{ package }}
-        </title>
-
-        {% set packages = dependent_packages %}
+        </h2>
 
         {% include "quickstats.html" %}
 
+	{% for package in packages_rev_deps %}
         {% include "package.html" %}
+	{% endfor %}
 
       {% endif %}
 

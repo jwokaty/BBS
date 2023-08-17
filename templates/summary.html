@@ -1,7 +1,7 @@
 {# summary.html #}
 
       <article class="output">
-      {% for label, value in detail.items() %}
+      {% for label, value in summary.items() %}
         <div class="row">
           <div class="col">
            {{ label }} 
@@ -9,5 +9,6 @@
           <div class="col">
            {{ value }} 
           </div>
+	</div>
       {% endfor %}
       </article>
