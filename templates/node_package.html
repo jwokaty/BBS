@@ -1,112 +1,82 @@
-{% extends "base.html" %}
-
-{% block content %}
-        <div class="row row-cols-2">
-          <div class="col">
-            <div class="row">
-              <a href="{{ package.name }}">{{ package.name }}</a>
-              {{ package.version }}
-              (<a href="https://bioconductor.org/packages/devel/{{ package.name }}">
-                 landing page
-               </a>)
-            </div>
-            <div class="row">
-              Maintainer: {{ package.maintainer }}
-            </div>
-            <div class="row snapshot_date">
-              Snapshot Date: {{ package.snapshot_date }}
-            </div>
-            <div class="row git_url">
-              Git URL: {{ package.git_url }}
-            </div>
-            <div class="row git_branch">
-              Git Branch: {{ package.git_branch }}
-            </div>
-            <div class="row git_last_commit">
-              Git Last Commit: {{ package.git_last_commit }}
-            </div>
-            <div class="row git_last_commit_date">
-              Git Last Commit Date: {{ package.git_last_commit_date }}
-            </div>
-          </div>
-          <div class="col">
-            <div class="row row-cols-6">
-              <div class="col header">
-                OS / Arch
-              </div>
-              {% result = package.results[0] %}
-              {% if "install" in result.keys() %}
-              <div class="col header">
-                Install
-              </div>
-              {% endif %}
-              {% if "build" in result.keys() %}
-              <div class="col header">
-                Build
-              </div>
-              {% endif %}
-              {% if "check" in result.keys() %}
-              <div class="col header">
-                Check
-              </div>
-              {% endif %}
-              {% if "buildbin" in result.keys() %}
-              <div class="col header">
-                Build Bin
-              </div>
-              {% endif %}
-              {% if "propagate" in result.keys() %}
-              <div class="col header">
-                Propagate
-              </div>
-              {% endif %}
-            </div>
-            {% for result in package.results %}
-            <div class="row row-cols-7">
-              <div class="col {{ result['os_arch'] }}">
-                {{ result['os_arch'] }}
-              </div>
-              {% if "install" in result.keys() %}
-              <div class="col {{ result['os_arch'] }}">
-                <a class="btn btn-{{ result['install'] }}"
-                   href="{{ package.name }}/{{ result['hostname'] }}-install.html">
-                  {{ result['install'] }}
-                </a>
-              </div>
-              {% endif %}
-              {% if "build" in result.keys()  %}
-              <div class="col {{ result['os_arch'] }}">
-                <a class="btn btn-{{ result['build'] }}"
-                   href="{{ package.name }}/{{ result['hostname'] }}-buildsrc.html">
-                  {{ result['build'] }}
-                </a>
-              </div>
-              {% endif %}
-              {% if "check" in result.keys() %}
-              <div class="col {{ result['os_arch'] }}">
-                <a class="btn btn-{{ result['check'] }}"
-                   href="{{ package.name }}/{{ result['hostname'] }}-checksrc.html">
-                  {{ result['check'] }}
-                </a>
-              </div>
-              {% endif %}
-              {% if "buildbin" in result.keys() %}
-              <div class="col {{ result['os_arch'] }}">
-                <a class="btn btn-{{ result['buildbin'] }}"
-                   href="{{ package.name }}/{{ result['hostname'] }}-buildbin.html">
-                  {{ result['buildbin'] }}
-                </a>
-              </div>
-              {% endif %}
-              {% if "propagate" in result.keys() %}
-              <div class="col {{ result['os_arch'] }}">
-                <span class="btn btn-{{ result['propagate'] }}">
-                  {{ result['propagate'] }}
-                </span>
-              </div>
-              {% endif %}
-            </div>
-            {% endfor %}
-          </div>
-        </div>
-{% block content %}
+{# node_packages.html #}
+NODE PACKAGE
+        <main>
+          <table class="table">
+            <thead>
+              <tr>
+                <th span="col">Package</th>
+                <th span="col">OS Arch</th>
+                {% for stage in stages %}
+                <th span="col">{{ stage }}</th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="col" data-search="{{ package.name }}" rowspan="{{ nodes | length }}">
+                  <a href="{{ package.name }}">{{ package.name }}</a> {{ package.version }}
+                  <a href="https://bioconductor.org/packages/devel/{{ package.name }}" aria-label="{{ package.name }} landing page" data-toggle="tooltip" data-placement="top" title="{{ package.name }} landing page"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path d="M3.75 2h3.5a.75.75 0 0 1 0 1.5h-3.5a.25.25 0 0 0-.25.25v8.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25v-3.5a.75.75 0 0 1 1.5 0v3.5A1.75 1.75 0 0 1 12.25 14h-8.5A1.75 1.75 0 0 1 2 12.25v-8.5C2 2.784 2.784 2 3.75 2Zm6.854-1h4.146a.25.25 0 0 1 .25.25v4.146a.25.25 0 0 1-.427.177L13.03 4.03 9.28 7.78a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042l3.75-3.75-1.543-1.543A.25.25 0 0 1 10.604 1Z"></path></svg></a>
+                  <br>
+                  {{ package.maintainer }}
+                  <div class="row">
+                    <div class="col">
+                      Snapshot Date
+                    </div>
+                    <div class="col">
+                      {{ package.snapshot }}
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col">
+                      Git URL
+                    </div>
+                    <div class="col">
+                      {{ package.git_url }}
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col">
+                      Git Branch
+                    </div>
+                    <div class="col">
+                      {{ package.git_branch }}
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col">
+                      Git Last Commit
+                    </div>
+                    <div class="col">
+                      {{ package.git_last_commit }}
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col">
+                      Git Last Commit Date
+                    </div>
+                    <div class="col">
+                      {{ package.git_last_commit_date }}
+                    </div>
+                  </div>
+                </th>
+              </tr>
+              {% for node in nodes %}
+              <tr>
+                <th scope="row">{{ node['os'] }} {{ node['arch'] }}</th>
+                {% for stage in stages %}
+                <td>
+                  <a class="btn btn-{{ result['install'] }}"
+                    href="{{ package.name }}/{{ node['hostname'] }}-{{ stage }}.html">
+                    {{ package.results[node['hostname']][stage] }}</a>
+                </td>
+                {% endfor %}
+                {% if node['has_buildbin'] %}
+                <td>
+                  <span class="btn " >propagation</span>
+                </td>
+                {% endif %}
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </main>

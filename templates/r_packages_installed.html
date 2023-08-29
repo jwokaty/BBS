@@ -3,36 +3,42 @@
 {% block content %}
 
       <article class="output">
-	<div class="row">
-	  <div class="col">
-	    Package
-	  </div>
-	  <div class="col">
-	    LibPath 
-	  </div>
-	  <div class="col">
-	    Version 
-	  </div>
-	  <div class="col">
-	    Built 
-	  </div>
-	</div>
-	{% for package in packages %}
-        <div class="row">
-          <div class="col">
-            {{ package['Name'] }}
-          </div>
-          <div class="col">
-            {{ package['LibPath']}}
-          </div>
-          <div class="col">
-            {{ package['Version'] }}
-          </div>
-          <div class="col">
-            {{ package['Built'] }}
-          </div>
-        </div>
-	{% endfor %}
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">
+                Package
+              </th>
+              <th scope="col">
+                LibPath 
+              </th>
+              <th scope="col">
+                Version 
+              </th>
+              <th scope="col">
+                Built 
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+           {% for package in packages %}
+            <tr>
+              <td>
+                {{ package['Name'] }}
+              </td>
+              <td>
+                {{ package['LibPath']}}
+              </td>
+              <td>
+                {{ package['Version'] }}
+              </td>
+              <td>
+                {{ package['Built'] }}
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
       </article>
 
 {% endblock content %}

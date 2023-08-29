@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
-      {% if compact %}
+      {% if node %}
+        {% include "node_package.html" %}
+      {% elif compact %}
         {% include "compact_packages.html" %}
-      {% elif node %}
-        {% include "node_packages.html" %}
       {% else %}
         {% include "packages.html" %}
       {% endif %}

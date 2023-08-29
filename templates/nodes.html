@@ -1,54 +1,47 @@
 {# nodes.html #}
 
-        <div class="row">
-          <div class="col-sm">
-            <div class="row row-cols-5">
-              <div class="col col-sm-1">
-                Hostname
-              </div>
-              <div class="col col-sm-2">
-                OS 
-              </div>
-              <div class="col col-sm-1">
-                Arch (*) 
-              </div>
-              <div class="col col-sm-3">
-                R version 
-              </div>
-              <div class="col col-sm-2">
-                Installed packages
-              </div>
-            </div>
-            <div class="row row-cols-5">
+      <aside class="nodes">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Hostname</th>
+              <th scope="col">OS</th>
+              <th scope="col">Arch (*)</th>
+              <th scope="col">R version</th>
+              <th scope="col">Installed packages</th>
+            </tr>
+          </thead>
+          <tbody>
             {% for node in nodes %}
-              <div class="col col-sm-1">
-                <a href="{{ node['hostname'] }}-NodeInfo.html">{{ node['hostname'] }}</a>
-              </div>
-              <div class="col col-sm-2">
+            <tr>
+              <th scope="row">
+                <a href="{{ base_url }}{{ node['hostname'] }}-NodeInfo.html">{{ node['hostname'] }}</a>
+              </th>
+              <td>
                 {{ node['os'] }}
-              </div>
-              <div class="col col-sm-1">
+              </td>
+              <td>
                 {{ node['arch'] }}
-              </div>
-              <div class="col col-sm-3">
+              </td>
+              <td>
                 {{ node['r_version'] }}
-              </div>
-              <div class="col col-sm-2">
-                <a href="{{ node['hostname'] }}-R-instpkgs.html">
+              </td>
+              <td>
+                <a href="{{ base_url }}{{ node['hostname'] }}-R-instpkgs.html">
                   {{ node['r_installed_packages'] }}
                 </a>
-              </div>
+              </td>
+            </tr>
             {% endfor %}
-            </div>
-          </div>
-        </div>
-        <div class="row">
-          <p>
-            Click on any hostname to see more info about the system (e.g.,
-            compilers)
-          </p>
-          <p>
-            * as reported by <span class="code">uname -p</span>, except on
-            Windows and Mac OS X
-          </p>
-        </div>
+          </tbody>
+          <tfoot>
+            <tr>
+              <th scope="row" colspan="5">
+                Click on any hostname to see more info about the system (e.g., compilers)
+                <br>
+                * as reported by uname -p, except on Windows and Mac OS X
+             </th>
+           </tr>
+         </tfoot>
+       </table>
+      </aside>

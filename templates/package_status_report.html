@@ -2,7 +2,9 @@
 
 {% block content %}
 
-      {% include "package_full.html" %}
+      {% set packages = [package] %}
+
+      {% include "packages.html" %}
 
       {% include "summary.html" %}
 
@@ -10,47 +12,55 @@
         <h2>
           Command output
         </h2>
-        <div>
-          {{ command_output }}
+        <div class="code">
+          <pre>{{ command_output }}</pre>
         </div>
       </article>
 
-      {% if status == "check" %}
+      {% if stage == "checksrc" %}
 
+      {% for install_path, install_output in installation_output.items() %}
       <article class="output">
         <h2>
           Installation output
         </h2>
         <div class="output_path">
-          {{ install_output_path }}
+          {{ install_path }}
         </div>
-        <div>
-          {{ install_output }}
+        <div class="code">
+          <pre>{{ install_output }}</pre>
         </div>
       </article>
+      {% endfor %}
 
+      {% if tests_output %}
+      {% for path, output in tests_output.items() %}
       <article class="output">
         <h2>
           Tests output
         </h2>
-        <div class="output_path">
-          {{ tests_output_path }}
+        <div class="code output_path">
+          {{ path }}
         </div>
-        <div>
-          {{ tests_output }}
+        <div class="code">
+          <pre>{{ output }}</pre>
         </div>
       </article>
+      {% endfor %}
+      {% endif %}
 
       <article class="output">
         <h2>
           Example timings
         </h2>
+	{% for path, output in example_timings.items() %}
         <div class="output_path">
-          {{ example_timings_path }}
+          {{ path }}
         </div>
-        <div class="output">
-          {{ example_timings_output }}
+        <div class="code">
+          <pre>{{ output }}</pre>
         </div>
+	{% endfor %}
       </article>
       {% endif %}
 

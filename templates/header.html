@@ -1,7 +1,5 @@
       <header>
 
-        {% include "navigation.html" %}
-
         <h1>
           {{ title }}
         </h1>
@@ -35,9 +33,7 @@
         {% endif %}
 
         {% if nodes %}
-        <div id="nodes">
           {% include "nodes.html" %}
-        </div>
         {% endif %}
 
         {% if show_statuses %}
@@ -47,9 +43,7 @@
         {% endif %}
 
         {% if quickstats %}
-        <div id="quickstats">
           {% include "quickstats.html" %}
-        </div>
         {% endif %}
 
         {% if developer_note %}

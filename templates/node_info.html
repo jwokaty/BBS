@@ -5,44 +5,41 @@
       {% include "summary.html" %}
 
       {% for command in commands %}
-      <article class="output">
+      <aside class="output">
         <h2>
          {{ command['name'] }} 
         </h2>
         {% if command['compiler'] %}
-        <div class="row">
-          <div class="col">
-           R variable (VAR) 
-          </div>
-          <div class="col">
-           Value ('R CMD config <VAR>' output) 
-          </div>
-        </div>
-        {% for r_var in command['r_vars'] %}
-        <div class="row">
-          <div class="col">
-            {{ r_var }} 
-          </div>
-          <div class="col">
-            {{ command['r_var_val'][r_var] }} 
-          </div>
-        </div>
-        {% endfor %}
+        <table class="table">
+          <tbody>
+            <tr>
+              <th scope="col">R variable (VAR)</th>
+	      <th scope="col">Value ('<span class="code">R CMD config &lt;VAR&gt;</span>' output)</th>
+            </tr>
+            {% for r_var in command['r_vars'] %}
+            <tr>
+              <th scope="row">{{ r_var }}</th>
+	      <td><span class="code">{{ command['r_var_val'][r_var] }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
         {% endif %}
         <div class="row">
-          <div class="col">
-	    <div>
-	     {% if command['compiler'] %}
-	     <strong>Compiler version</strong>
-	     <span>('{{ command['r_vars'][0] }} --version' output):</span>
-	     {% else %}
-	     <strong>{{ command['name'] }} version</strong>
-	     <span>('{{ command['name'] }} --version' output):</span>
-	     {% endif %}
-            {{ command['sys_cmd_ver'] }}
+	  <div class="col">
+          {% if command['compiler'] %}
+            <b class="command">Compiler version</b>
+	    ('<span class="code">{{ command['r_vars'][0] }} --version</span>' output):
+          {% else %}
+            <b class="command">{{ command['name'] }} version</b>
+	    ('<span class="code">{{ command['name'] }} --version</span>' output):
+          {% endif %}
+	    <p>
+	      <pre>{{ command['sys_cmd_ver'] }}</pre>
+	    </p>
 	  </div>
         </div>
-      </article>
+      </aside>
       {% endfor %}
 
 {% endblock content %}

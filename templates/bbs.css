@@ -1,0 +1,59 @@
+body {
+  background-color: #fff;
+}
+
+.error {
+  background-color: #dc3545;
+  color: #fff;
+  font-weight: 700;
+}
+
+.na {
+  background-color: #6c757d;
+  color: #fff;
+  font-weight: 700;
+}
+
+.ok {
+  background-color: #38c406;
+  color: #000;
+  font-weight: 700;
+}
+
+.timeout {
+  background-color: #6d16b0;
+  color: #fff;
+  font-weight: 700;
+}
+
+.warning {
+  background-color: #ebd300;
+  color: #000;
+  font-weight: 700;
+}
+
+
+img.navbar-logo {
+  width: 200px;
+}
+
+aside {
+  margin: 2em 0;
+}
+
+.navbar-nav {
+  margin-top: 20px;
+}
+
+.code {
+  padding: .2em;
+}
+
+.code, .output pre {
+  background-color: #eee;
+  font-family: monospace;
+}
+
+.output pre {
+  padding: 1em;
+}

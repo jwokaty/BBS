@@ -1,62 +1,45 @@
 {# quickstats.html #}
 
+    <aside id="quickstats">
       <h2>Quick Stats</h2>
-
-      <div class="row">
-        <div class="col">
-          Node
-        </div>
-        <div class="col">
-          OS / Arch
-        </div>
-        {% if "install" in stages %}
-        <div class="col">
-          Install
-        </div>
-        {% endif %}
-        {% if "buildsrc" in stages %}
-        <div class="col">
-          Build
-        </div>
-        {% endif %}
-        {% if "checksrc" in stages %}
-        <div class="col">
-          Check
-        </div>
-        {% endif %}
-        {% if "buildbin" in stages %}
-        <div class="col">
-          Build Bin
-        </div>
-        {% endif %}
-      </div>
-
-      {% for hostname, attributes in quickstats.items() %}
-      <div class="row">
-        <div class="col">
-          {{ hostname }}
-        </div>
-        <div class="col">
-          {{ attributes['os_arch'] }}
-        </div>
-        {% for stage in stages %}
-        <div class="col {{ stage }}">
-          <div class="col {{ stage }} timeout">
-            {{ attributes[stage][0] }}
-          </div>
-          <div class="col {{ stage }} error">
-            {{ attributes[stage][1] }}
-          </div class="col">
-          {% if stage == "checksrc" %}
-          <div class="col {{ stage }} warning">
-            {{ attributes[stage][2] }}
-          </div>
-          {% endif %}
-          <div class="col {{ stage }} ok">
-            {{ attributes[stage][3] }}
-          </div>
-        </div>
-        {% endfor %}
-        </div>
-      </div>
-      {% endfor %}
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">Node</th>
+            <th scope="col">OS / Arch</th>
+            {% if "install" in stages %}
+            <th scope="col">Install</th>
+            {% endif %}
+            {% if "buildsrc" in stages %}
+            <th scope="col">Build</th>
+            {% endif %}
+            {% if "checksrc" in stages %}
+            <th scope="col">Check</th>
+            {% endif %}
+            {% if "buildbin" in stages %}
+            <th scope="col">Build Bin</th>
+            {% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for hostname, attributes in quickstats.items() %}
+          <tr>
+            <th scope="col">
+              <a href="{{ base_url }}{{ hostname }}">{{ hostname }}</a>
+            </th>
+            <td>{{ attributes['os_arch'] }}</th>
+            {% for stage in stages %}
+            <td>
+              <span class="badge {{ stage }} timeout">{{ attributes[stage][0] }}</span>
+              <span class="badge {{ stage }} error">{{ attributes[stage][1] }}</span>
+              {% if stage == "checksrc" %}
+              <span class="badge {{ stage }} warning">{{ attributes[stage][2] }}</span>
+              {% endif %}
+              <span class="badge {{ stage }} ok">{{ attributes[stage][3] }}</span>
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </aside>

@@ -2,7 +2,9 @@
 
 {% block content %}
 
-      {% include "package.html" %}
+      {% set packages = [package] %}
+
+      {% include "packages.html" %}
 
       {% if packages_rev_deps %}
 
@@ -13,7 +15,7 @@
         {% include "quickstats.html" %}
 
 	{% for package in packages_rev_deps %}
-        {% include "package.html" %}
+          {% include "packages.html" %}
 	{% endfor %}
 
       {% endif %}
